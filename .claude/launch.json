@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "eudr-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["eudr-web/serve.js"],
+      "port": 8777,
+      "autoPort": true
+    }
+  ]
+}

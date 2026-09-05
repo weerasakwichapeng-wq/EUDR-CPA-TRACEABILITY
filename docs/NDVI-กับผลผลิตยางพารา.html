@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NDVI กับผลผลิตยางพารา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=Sarabun:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ground:#f6f8f4;
+  --panel:#ffffff;
+  --panel-2:#eef2ea;
+  --line:#dce3d6;
+  --line-soft:#e8ede3;
+  --ink:#16201a;
+  --ink-2:#4a5b4e;
+  --ink-3:#7c8c80;
+  --leaf:#1e7a3c;
+  --leaf-soft:#e2f0e5;
+  --amber:#a07a12;
+  --amber-soft:#f8efd6;
+  --clay:#a6552e;
+  --clay-soft:#f7e7de;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --body:"Sarabun","Segoe UI",system-ui,sans-serif;
+  --display:"Bai Jamjuree","Sarabun",system-ui,sans-serif;
+  --measure:70ch;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0e120f;
+    --panel:#151b16;
+    --panel-2:#1c241e;
+    --line:#2a352c;
+    --line-soft:#232c25;
+    --ink:#e6ede7;
+    --ink-2:#adbcb0;
+    --ink-3:#7f9084;
+    --leaf:#5cc07e;
+    --leaf-soft:#182a1d;
+    --amber:#dcb04a;
+    --amber-soft:#2b2410;
+    --clay:#d98a5e;
+    --clay-soft:#2e1d14;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0e120f;
+  --panel:#151b16;
+  --panel-2:#1c241e;
+  --line:#2a352c;
+  --line-soft:#232c25;
+  --ink:#e6ede7;
+  --ink-2:#adbcb0;
+  --ink-3:#7f9084;
+  --leaf:#5cc07e;
+  --leaf-soft:#182a1d;
+  --amber:#dcb04a;
+  --amber-soft:#2b2410;
+  --clay:#d98a5e;
+  --clay-soft:#2e1d14;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--body);font-size:16px;line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--measure);margin:0 auto;padding:0 22px}
+.wide{max-width:1080px;margin:0 auto;padding:0 22px}
+
+/* ---------- header ---------- */
+header{
+  border-bottom:1px solid var(--line);background:var(--panel);
+  padding:46px 0 34px;margin-bottom:44px;
+}
+.eyebrow{
+  font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--leaf);margin:0 0 14px;
+}
+h1{
+  font-family:var(--display);font-weight:700;font-size:clamp(30px,5vw,44px);
+  line-height:1.18;letter-spacing:-.015em;margin:0 0 14px;text-wrap:balance;
+}
+.lede{font-size:17.5px;color:var(--ink-2);margin:0;text-wrap:pretty}
+.meta{
+  margin-top:22px;padding-top:18px;border-top:1px solid var(--line-soft);
+  font-family:var(--mono);font-size:12px;color:var(--ink-3);
+  display:flex;gap:22px;flex-wrap:wrap;
+}
+
+/* ---------- structure ---------- */
+h2{
+  font-family:var(--display);font-weight:600;font-size:24px;letter-spacing:-.01em;
+  margin:56px 0 6px;text-wrap:balance;
+}
+h2 .num{
+  font-family:var(--mono);font-size:13px;font-weight:500;color:var(--leaf);
+  display:block;margin-bottom:6px;letter-spacing:.08em;
+}
+h3{font-family:var(--display);font-weight:600;font-size:17.5px;margin:32px 0 8px}
+p{margin:0 0 16px;text-wrap:pretty}
+strong{font-weight:600}
+a{color:var(--leaf)}
+.sub{color:var(--ink-3);font-size:14px;margin-top:-2px}
+
+/* ---------- verdict ---------- */
+.verdict{
+  background:var(--leaf-soft);border-left:3px solid var(--leaf);
+  border-radius:0 12px 12px 0;padding:22px 24px;margin:0 0 8px;
+}
+.verdict p{margin:0 0 10px;font-size:17px}
+.verdict p:last-child{margin:0}
+.verdict b{color:var(--leaf)}
+
+/* ---------- callouts ---------- */
+.note{
+  border:1px solid var(--line);background:var(--panel);border-radius:12px;
+  padding:18px 20px;margin:22px 0;font-size:15px;
+}
+.note.warn{border-color:var(--amber);background:var(--amber-soft)}
+.note.stop{border-color:var(--clay);background:var(--clay-soft)}
+.note h4{
+  font-family:var(--display);font-size:14px;font-weight:600;margin:0 0 7px;
+  letter-spacing:.01em;
+}
+.note.warn h4{color:var(--amber)}
+.note.stop h4{color:var(--clay)}
+.note p:last-child{margin:0}
+
+/* ---------- tables ---------- */
+.tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{padding:11px 15px;text-align:left;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{
+  background:var(--panel-2);font-family:var(--display);font-weight:600;font-size:12.5px;
+  letter-spacing:.03em;color:var(--ink-2);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.yes{color:var(--leaf);font-weight:600}
+.no{color:var(--clay);font-weight:600}
+caption{
+  caption-side:bottom;padding:10px 15px;font-size:12.5px;color:var(--ink-3);text-align:left;
+}
+
+/* ---------- figure ---------- */
+figure{margin:30px 0}
+.chart{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:18px;overflow-x:auto;
+}
+.chart svg{display:block;width:100%;height:auto;min-width:560px}
+figcaption{font-size:13px;color:var(--ink-3);margin-top:10px;line-height:1.6}
+
+/* ---------- ranked list ---------- */
+ol.rank{list-style:none;counter-reset:r;padding:0;margin:20px 0}
+ol.rank li{
+  counter-increment:r;position:relative;padding:13px 0 13px 46px;
+  border-bottom:1px solid var(--line-soft);
+}
+ol.rank li:last-child{border-bottom:0}
+ol.rank li::before{
+  content:counter(r);position:absolute;left:0;top:13px;
+  width:28px;height:28px;border-radius:8px;display:grid;place-items:center;
+  background:var(--leaf-soft);color:var(--leaf);
+  font-family:var(--mono);font-size:13px;font-weight:500;
+}
+ol.rank li.dim::before{background:var(--panel-2);color:var(--ink-3)}
+ol.rank b{display:block;font-family:var(--display);font-weight:600;font-size:15.5px}
+ol.rank span{font-size:14px;color:var(--ink-2)}
+
+ul.plain{padding-left:20px;margin:14px 0}
+ul.plain li{margin-bottom:8px}
+
+/* ---------- stage cards ---------- */
+.stages{display:grid;gap:14px;margin:24px 0;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.stage{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 19px;
+  display:flex;flex-direction:column;gap:9px;
+}
+.stage .tag{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--leaf);
+}
+.stage.later .tag{color:var(--ink-3)}
+.stage h4{font-family:var(--display);font-size:16px;font-weight:600;margin:0}
+.stage p{margin:0;font-size:14px;color:var(--ink-2)}
+.stage .need{
+  margin-top:auto;padding-top:11px;border-top:1px solid var(--line-soft);
+  font-size:12.5px;color:var(--ink-3);
+}
+
+/* ---------- checklist ---------- */
+.check{list-style:none;padding:0;margin:20px 0}
+.check li{
+  padding:11px 0 11px 30px;position:relative;border-bottom:1px solid var(--line-soft);
+  font-size:15px;
+}
+.check li:last-child{border-bottom:0}
+.check li::before{
+  content:"";position:absolute;left:2px;top:18px;width:12px;height:12px;
+  border:1.5px solid var(--leaf);border-radius:3px;
+}
+code{
+  font-family:var(--mono);font-size:.88em;background:var(--panel-2);
+  padding:1.5px 6px;border-radius:5px;color:var(--ink);
+}
+footer{
+  margin-top:64px;padding:26px 0 60px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--ink-3);
+}
+@media (max-width:640px){
+  body{font-size:15.5px}
+  header{padding:34px 0 26px;margin-bottom:32px}
+  h2{font-size:21px;margin-top:44px}
+}
+</style>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">บันทึกตั้งต้นโปรเจค</p>
+    <h1>NDVI กับผลผลิตยางพารา</h1>
+    <p class="lede">ดัชนีพืชพรรณจากดาวเทียมใช้ทำอะไรได้จริงในงานยางพารา ใช้ทำอะไรไม่ได้
+      และถ้าจะเอามาพยากรณ์ผลผลิตรายเดือน ต้องเริ่มจากตรงไหน</p>
+    <div class="meta">
+      <span>ฐานข้อมูลอ้างอิง · 6,963 แปลง · 84,013 ไร่</span>
+      <span>แปลงเฉลี่ย 9.68 ไร่ (1.55 ha)</span>
+      <span>ผู้รวบรวม 74 กลุ่ม</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="verdict">
+    <p><b>ข้อสรุปสั้นที่สุด</b> — NDVI <b>ไม่ใช่</b>ตัวทำนายปริมาณน้ำยาง
+      แต่เป็นตัวจับ <b>จังหวะฤดูกาล</b> และ <b>ความผิดปกติของสวน</b> ได้ดี</p>
+    <p>ให้วางมันเป็น <b>ตัวปรับ</b> ในโมเดลพยากรณ์ ไม่ใช่ตัวหลัก
+      ตัวหลักคือข้อมูลรับซื้อย้อนหลังของเราเองกับจำนวนวันฝนตก</p>
+  </div>
+
+  <h2><span class="num">01</span>NDVI คืออะไร</h2>
+  <p>ดัชนีพืชพรรณที่คำนวณจากแสงสองช่วงคลื่นที่ดาวเทียมวัดได้
+    ใบไม้ที่สังเคราะห์แสงอยู่จะดูดกลืนแสงสีแดงและสะท้อนอินฟราเรดใกล้อย่างรุนแรง</p>
+  <p style="font-family:var(--mono);font-size:14.5px;background:var(--panel-2);padding:14px 16px;border-radius:10px">
+    NDVI = (NIR − Red) ÷ (NIR + Red)
+  </p>
+  <p>ค่าอยู่ระหว่าง −1 ถึง +1 ยิ่งสูงยิ่งมีใบเขียวหนาแน่น ดินเปล่าราว 0.1–0.2
+    สวนยางโตเต็มที่ราว 0.75–0.9 ข้อมูลส่วนใหญ่เก็บเป็นจำนวนเต็มโดยคูณ 10,000 ไว้</p>
+
+  <h2><span class="num">02</span>ทำไมทำนายผลผลิตตรง ๆ ไม่ได้</h2>
+  <p>เหตุผลอยู่ที่สรีรวิทยาของต้นยาง ไม่ใช่ข้อจำกัดของดาวเทียม</p>
+  <p>NDVI ใช้ได้ดีมากกับพืชที่ <strong>ผลผลิตคือชีวมวล</strong> — ข้าว ข้าวโพด อ้อย
+    ใบเยอะแปลว่าสังเคราะห์แสงเยอะ แปลว่าเมล็ดหรือลำต้นเยอะตามไปด้วย ความสัมพันธ์ตรงไปตรงมา</p>
+  <p><strong>แต่น้ำยางไม่ได้ออกมาจากใบ</strong> มันมาจากท่อน้ำยางในเปลือกลำต้น
+    และปริมาณที่เก็บได้ขึ้นกับการจัดการเป็นหลัก</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>ตัวขับเคลื่อนปริมาณน้ำยาง</th><th style="width:120px">NDVI เห็นไหม</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>จำนวนวันกรีดจริง — ฝนตกกรีดไม่ได้</td><td class="no">ไม่เห็น</td></tr>
+        <tr><td>ระบบกรีด (d2 / d3) และความถี่</td><td class="no">ไม่เห็น</td></tr>
+        <tr><td>ฝีมือและจำนวนคนกรีด</td><td class="no">ไม่เห็น</td></tr>
+        <tr><td>การใช้สารเร่งน้ำยาง</td><td class="no">ไม่เห็น</td></tr>
+        <tr><td>อายุต้น พันธุ์ และการจัดการหน้ากรีด</td><td class="no">ไม่เห็น</td></tr>
+        <tr><td>ราคายาง — ราคาดีคนกรีดถี่ขึ้น</td><td class="no">ไม่เห็น</td></tr>
+        <tr><td>ช่วงผลัดใบและการแตกใบใหม่</td><td class="yes">เห็นชัด</td></tr>
+        <tr><td>ความเครียดจากแล้ง โรค ไฟ พายุ</td><td class="yes">เห็น</td></tr>
+        <tr><td>การเปลี่ยนแปลงพื้นที่ปลูก</td><td class="yes">เห็น</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note stop">
+    <h4>ปัญหาซ้ำ — NDVI อิ่มตัว</h4>
+    <p>เมื่อเรือนยอดหนาแน่นถึงระดับหนึ่ง ค่า NDVI จะขึ้นค้างแล้วไม่ขยับอีก
+      สวนยางโตเต็มที่จึงมีค่าสูงเกือบคงที่ตลอด ไม่ว่าเดือนนั้นจะกรีดได้มากหรือน้อย
+      ช่วงที่เหลือให้เห็นความต่างจึงแคบมาก</p>
+  </div>
+
+  <h2><span class="num">03</span>สัญญาณที่ NDVI จับได้ชัดที่สุด — การผลัดใบ</h2>
+  <p>นี่คือจังหวะที่ค่า NDVI ในสวนยางเปลี่ยนแรงที่สุดในรอบปี
+    ต้นยางทิ้งใบพร้อมกันแล้วแตกใบใหม่ ค่าจะดิ่งลงแล้วเด้งกลับ
+    ช่วงนี้หยุดกรีดหรือกรีดได้น้อยมาก</p>
+
+  <figure>
+    <div class="chart">
+      <svg viewBox="0 0 800 300" role="img" aria-label="แผนภาพจำลองค่า NDVI รายเดือนของสวนยาง แสดงช่วงผลัดใบต้นปีและช่วงกรีด">
+        <!-- wintering band -->
+        <rect x="118" y="40" width="175" height="215" fill="var(--clay-soft)"/>
+        <text x="205" y="34" text-anchor="middle" font-family="var(--display)" font-size="13" font-weight="600" fill="var(--clay)">ผลัดใบ · หยุดกรีด</text>
+        <!-- tapping band -->
+        <rect x="293" y="264" width="467" height="16" rx="8" fill="var(--leaf-soft)"/>
+        <text x="526" y="276" text-anchor="middle" font-family="var(--display)" font-size="12" font-weight="600" fill="var(--leaf)">ช่วงเปิดกรีด</text>
+        <!-- axes -->
+        <line x1="60" y1="255" x2="760" y2="255" stroke="var(--line)" stroke-width="1.5"/>
+        <line x1="60" y1="40" x2="60" y2="255" stroke="var(--line)" stroke-width="1.5"/>
+        <!-- y labels -->
+        <text x="52" y="90" text-anchor="end" font-family="var(--mono)" font-size="11" fill="var(--ink-3)">0.9</text>
+        <text x="52" y="196" text-anchor="end" font-family="var(--mono)" font-size="11" fill="var(--ink-3)">0.5</text>
+        <text x="52" y="259" text-anchor="end" font-family="var(--mono)" font-size="11" fill="var(--ink-3)">0.3</text>
+        <text x="24" y="150" text-anchor="middle" font-family="var(--display)" font-size="12" font-weight="600" fill="var(--ink-2)" transform="rotate(-90 24 150)">NDVI</text>
+        <!-- curve -->
+        <polyline fill="none" stroke="var(--leaf)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"
+          points="89,85 148,123 206,193 264,171 323,117 381,92 439,79 498,73 556,73 614,76 673,79 731,82"/>
+        <!-- points -->
+        <g fill="var(--leaf)">
+          <circle cx="89" cy="85" r="4"/><circle cx="148" cy="123" r="4"/><circle cx="206" cy="193" r="5"/>
+          <circle cx="264" cy="171" r="4"/><circle cx="323" cy="117" r="4"/><circle cx="381" cy="92" r="4"/>
+          <circle cx="439" cy="79" r="4"/><circle cx="498" cy="73" r="4"/><circle cx="556" cy="73" r="4"/>
+          <circle cx="614" cy="76" r="4"/><circle cx="673" cy="79" r="4"/><circle cx="731" cy="82" r="4"/>
+        </g>
+        <!-- lowest point annotation -->
+        <line x1="206" y1="193" x2="206" y2="228" stroke="var(--clay)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="206" y="243" text-anchor="middle" font-family="var(--display)" font-size="12" font-weight="600" fill="var(--clay)">จุดต่ำสุด</text>
+        <!-- x labels -->
+        <g font-family="var(--mono)" font-size="11" fill="var(--ink-3)" text-anchor="middle">
+          <text x="89" y="296">ม.ค.</text><text x="148" y="296">ก.พ.</text><text x="206" y="296">มี.ค.</text>
+          <text x="264" y="296">เม.ย.</text><text x="323" y="296">พ.ค.</text><text x="381" y="296">มิ.ย.</text>
+          <text x="439" y="296">ก.ค.</text><text x="498" y="296">ส.ค.</text><text x="556" y="296">ก.ย.</text>
+          <text x="614" y="296">ต.ค.</text><text x="673" y="296">พ.ย.</text><text x="731" y="296">ธ.ค.</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption><strong>แผนภาพจำลอง ไม่ใช่ข้อมูลที่วัดจริง</strong> — ใช้อธิบายรูปแบบเท่านั้น
+      ช่วงเวลาจริงต่างกันตามพื้นที่ พันธุ์ และปี จ.เลย อยู่อีสานตอนบน ผลัดใบชัดและมาเร็วกว่าภาคใต้
+      ต้องปรับเทียบกับข้อมูลจริงของพื้นที่ก่อนใช้งาน</figcaption>
+  </figure>
+
+  <p>ประโยชน์ของสัญญาณนี้คือบอกได้ว่า <strong>ปีนี้ผลัดใบเร็วหรือช้ากว่าปกติกี่สัปดาห์</strong>
+    ซึ่งเลื่อนวันเปิดกรีดและเลื่อนจุดเริ่มของฤดูผลผลิตตามไปด้วยทั้งฤดู</p>
+
+  <h2><span class="num">04</span>สามงานที่ NDVI ทำได้จริง</h2>
+
+  <h3>จับปฏิทินฤดูกาล</h3>
+  <p>หาวันที่ NDVI ต่ำสุดและวันที่ฟื้นกลับถึงระดับปกติในแต่ละปี
+    เอามาเทียบกันเพื่อคาดว่าฤดูกรีดปีนี้จะเริ่มเมื่อไร</p>
+
+  <h3>จับความผิดปกติของสวน</h3>
+  <p>ภัยแล้ง ไฟไหม้ พายุ และที่สำคัญที่สุดคือ <strong>โรคใบร่วงชนิดใหม่</strong>
+    ซึ่งระบาดในไทยและทำผลผลิตหายจริงเป็นวงกว้าง
+    NDVI จับได้ก่อนตัวเลขรับซื้อจะตกลงมาให้เห็น</p>
+
+  <h3>เทียบปีต่อปี</h3>
+  <p>สร้างค่าฐานเฉลี่ยหลายปีของแต่ละเดือน แล้วดูว่าปีนี้เบี่ยงไปเท่าไร
+    อ่านผลว่าเป็น <strong>สัญญาณเตือนความเสี่ยงรายกลุ่ม</strong> ไม่ใช่ตัวเลขพยากรณ์กิโลกรัม</p>
+
+  <div class="note">
+    <h4>วิธีใช้ที่ให้ผลคุ้มที่สุด</h4>
+    <p>ทำเป็นแดชบอร์ดเทียบ 74 กลุ่มผู้รวบรวม ว่ากลุ่มไหนค่าเบี่ยงต่ำกว่าฐานผิดปกติ
+      แล้วส่งคนลงไปดูเฉพาะกลุ่มนั้น แทนที่จะพยายามแปลง NDVI เป็นกิโลกรัมซึ่งทำไม่ได้อยู่ดี</p>
+  </div>
+
+  <h2><span class="num">05</span>อะไรทำนายผลผลิตเดือนหน้าได้ดีกว่า</h2>
+  <p class="sub">เรียงตามน้ำหนักที่ควรให้ในโมเดล</p>
+  <ol class="rank">
+    <li><b>ข้อมูลรับซื้อย้อนหลังของเราเอง</b>
+      <span>รูปแบบฤดูกาลรายเดือนของกลุ่มตัวเอง แม่นกว่าดาวเทียมมาก และเป็นของจริงไม่ต้องตีความ</span></li>
+    <li><b>จำนวนวันฝนตกในเดือนนั้น</b>
+      <span>ตัวแปรระยะสั้นที่แรงที่สุด ฝนตกกลางดึกถึงเช้าคือกรีดไม่ได้ทั้งวัน</span></li>
+    <li><b>พื้นที่เปิดกรีดจริง</b>
+      <span>ไม่ใช่พื้นที่ทั้งหมด ต้องแยกตามอายุต้น ต้นเล็กยังไม่เปิดกรีด ต้นแก่ผลผลิตลด</span></li>
+    <li><b>ราคายาง</b>
+      <span>ราคาสูงขึ้นคนกรีดถี่ขึ้นและใช้สารเร่งมากขึ้น ปริมาณเข้าโรงงานเพิ่มตาม</span></li>
+    <li class="dim"><b>NDVI anomaly และวันผลัดใบ</b>
+      <span>ดาวเทียมมาอยู่ตรงนี้ ทำหน้าที่ปรับค่าและเตือนความผิดปกติ ไม่ใช่ตัวหลัก</span></li>
+  </ol>
+
+  <h2><span class="num">06</span>ข้อจำกัดทางเทคนิคที่ต้องรู้ก่อนเริ่ม</h2>
+
+  <h3>ขนาดจุดภาพเทียบกับขนาดแปลง</h3>
+  <p>แปลงในฐานข้อมูลเฉลี่ย 9.68 ไร่ หรือ 1.55 เฮกตาร์ ซึ่งเล็กมากในสายตาดาวเทียมหลายตัว</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>ชุดข้อมูล</th><th class="num">ขนาดจุดภาพ</th><th class="num">พื้นที่ต่อจุด</th><th>เทียบแปลงเฉลี่ย</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>NOAA CDR VIIRS NDVI</td><td class="num">5,566 ม.</td><td class="num">3,098 ไร่</td><td>1 จุดกลืนได้ราว 2,000 แปลง</td></tr>
+        <tr><td>MODIS NDVI</td><td class="num">250 ม.</td><td class="num">39 ไร่</td><td>1 จุดกลืนทั้งแปลง</td></tr>
+        <tr><td>Landsat / Hansen</td><td class="num">30 ม.</td><td class="num">0.56 ไร่</td><td>ราว 17 จุดต่อแปลง</td></tr>
+        <tr><td>Sentinel-2</td><td class="num">10 ม.</td><td class="num">0.06 ไร่</td><td>ราว 155 จุดต่อแปลง</td></tr>
+      </tbody>
+      <caption>สรุป — ระดับรายแปลงต้องใช้ Sentinel-2 เท่านั้น ส่วน MODIS พอใช้ได้ถ้ารวมเป็นรายกลุ่มหรือรายหมู่บ้าน</caption>
+    </table>
+  </div>
+
+  <div class="note warn">
+    <h4>เมฆ — ปัญหาที่คนมองข้ามบ่อยที่สุด</h4>
+    <p>ฤดูฝน พฤษภาคมถึงตุลาคม คือช่วงที่ผลผลิตพีค และเป็นช่วงที่ภาพจากแสงมองไม่ทะลุเมฆพอดี
+      ข้อมูล NDVI จะขาดหายมากที่สุดในเดือนที่เราอยากรู้ที่สุด
+      ต้องแก้ด้วยภาพผสมหลายวัน หรือใช้เรดาร์ Sentinel-1 ซึ่งทะลุเมฆได้มาช่วย</p>
+  </div>
+
+  <div class="note warn">
+    <h4>สวนยางถูกนับเป็นป่าในข้อมูลหลายชุด</h4>
+    <p>เวลาโค่นยางรอบตัดฟันหรือปลูกทดแทน ข้อมูลอย่าง Hansen จะขึ้นเป็น forest loss
+      ทั้งที่ไม่ใช่การทำลายป่า ถ้าเอามาใช้ดิบ ๆ ในงาน EUDR จะได้สัญญาณเตือนปลอมจำนวนมาก
+      ต้องใช้ควบกับแผนที่ฐานปี 2020 และตรวจภาพจริงประกอบเสมอ</p>
+  </div>
+
+  <h2><span class="num">07</span>ชุดข้อมูลที่ควรใช้</h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>ชุดข้อมูล</th><th>ใช้ทำอะไร</th></tr></thead>
+      <tbody>
+        <tr><td><code>COPERNICUS/S2_SR_HARMONIZED</code><br><span class="sub">Sentinel-2 · 10 ม.</span></td>
+            <td>NDVI รายแปลง ปฏิทินผลัดใบ ตรวจความเครียดของสวน ภาพเปรียบเทียบก่อนหลัง</td></tr>
+        <tr><td><code>MODIS/…/MOD13Q1</code><br><span class="sub">MODIS NDVI · 250 ม. · 16 วัน</span></td>
+            <td>อนุกรมเวลายาวย้อนหลังกว่า 20 ปี ใช้สร้างค่าฐานรายกลุ่ม เมฆน้อยกว่าเพราะเป็นภาพผสม</td></tr>
+        <tr><td><code>UMD/hansen/global_forest_change_*</code><br><span class="sub">30 ม.</span></td>
+            <td>แบนด์ <code>lossyear</code> บอกปีที่สูญเสียพื้นที่ป่า กรองตั้งแต่ปี 2021 เพื่อตรวจตามเกณฑ์ EUDR</td></tr>
+        <tr><td><code>JRC/GFC2020/*</code><br><span class="sub">แผนที่ป่าปี 2020</span></td>
+            <td>แผนที่อ้างอิงที่คณะกรรมาธิการยุโรปทำขึ้นเพื่อใช้กับ EUDR โดยเฉพาะ ตรงเป้าที่สุด</td></tr>
+        <tr><td>RADD alerts<br><span class="sub">เรดาร์ Sentinel-1</span></td>
+            <td>สัญญาณเตือนการตัดไม้ ทะลุเมฆได้ เหมาะกับฤดูฝนไทย</td></tr>
+      </tbody>
+      <caption>ชื่อ asset ที่มีเลขปีหรือเวอร์ชันต่อท้ายเปลี่ยนทุกปี ต้องเช็คในแค็ตตาล็อกของ Earth Engine ก่อนใช้ทุกครั้ง</caption>
+    </table>
+  </div>
+
+  <h2><span class="num">08</span>แผนทำงานสามระยะ</h2>
+  <div class="stages">
+    <div class="stage">
+      <span class="tag">ระยะ 1 · เริ่มได้ทันที</span>
+      <h4>เพดานรายเดือน</h4>
+      <p>พื้นที่เปิดกรีด × ผลผลิตต่อไร่ × ค่าฤดูกาลรายเดือน ได้กรอบคร่าว ๆ ว่าเดือนไหนควรรับซื้อได้เท่าไร</p>
+      <p class="need">ไม่ต้องรอข้อมูลอะไรเพิ่ม</p>
+    </div>
+    <div class="stage">
+      <span class="tag">ระยะ 2 · เป็นแกนหลัก</span>
+      <h4>โมเดลจากข้อมูลจริง</h4>
+      <p>ข้อมูลรับซื้อของเราเอง บวกจำนวนวันฝนตก ได้พยากรณ์เดือนหน้าพร้อมช่วงความเชื่อมั่น</p>
+      <p class="need">ต้องมีข้อมูลรับซื้อย้อนหลัง 12 เดือนขึ้นไป ถ้าได้ 24–36 เดือนจะแยกฤดูกาลออกจากแนวโน้มได้</p>
+    </div>
+    <div class="stage later">
+      <span class="tag">ระยะ 3 · เสริม</span>
+      <h4>ดาวเทียมเข้ามาช่วย</h4>
+      <p>NDVI anomaly รายกลุ่มและวันผลัดใบ ใช้ปรับพยากรณ์และเตือนกลุ่มที่สวนมีปัญหา</p>
+      <p class="need">ต้องมีสคริปต์ Earth Engine ดึงค่ารายเดือนย้อนหลังหลายปี</p>
+    </div>
+  </div>
+
+  <div class="note stop">
+    <h4>อุปสรรคใหญ่ที่สุดตอนนี้ ไม่ใช่เรื่องดาวเทียม</h4>
+    <p>ระบบยังไม่มีข้อมูลรับซื้อย้อนหลังเลย โมเดลพยากรณ์จึงไม่มีอะไรให้เรียนรู้
+      งานเร่งด่วนอันดับแรกของโปรเจคใหม่คือ <strong>รวบรวมใบชั่งเก่าหรือบัญชีรับซื้อย้อนหลังเข้าระบบ</strong>
+      ไม่ใช่การเขียนสคริปต์ดาวเทียม</p>
+  </div>
+
+  <h2><span class="num">09</span>สิ่งที่ต้องเตรียมก่อนเปิดโปรเจค</h2>
+  <ul class="check">
+    <li>ข้อมูลรับซื้อย้อนหลังอย่างน้อย 12 เดือน แยกตามวันที่ ผู้ขาย น้ำหนัก และ %DRC</li>
+    <li>ข้อมูลฝนรายวันของสถานีใกล้เคียง หรือดึงจากชุดข้อมูลฝนดาวเทียม</li>
+    <li>อายุต้นยางหรือปีที่ปลูกรายแปลง เพื่อแยกพื้นที่เปิดกรีดออกจากพื้นที่ทั้งหมด</li>
+    <li>โพลิกอนแปลงในรูปแบบ GeoJSON — มีอยู่แล้วครบ 6,963 แปลง ส่งออกจากระบบเดิมได้เลย</li>
+    <li>บัญชี Google Earth Engine แบบใช้งานได้ และตกลงว่าจะรันเป็นสคริปต์หรือผ่าน API</li>
+    <li>ตัดสินใจหน่วยวิเคราะห์ — รายแปลง รายกลุ่มผู้รวบรวม หรือรายหมู่บ้าน</li>
+  </ul>
+
+  <div class="note">
+    <h4>ข้อควรระวังเรื่องความคาดหวัง</h4>
+    <p>อย่าตั้งเป้าว่าจะได้โมเดลที่บอกกิโลกรัมเดือนหน้าแม่นเป๊ะจากภาพดาวเทียม
+      สิ่งที่ได้จริงและมีค่าคือ <strong>ทิศทางกับสัญญาณเตือน</strong> —
+      ปีนี้ฤดูมาช้ากว่าปกติสองสัปดาห์ กลุ่มนี้สวนมีปัญหาควรลงไปดู
+      เดือนหน้าน่าจะต่ำกว่าค่าเฉลี่ยเพราะฝนตกถี่ผิดปกติ</p>
+  </div>
+
+</main>
+
+<footer class="wrap">
+  <p>บันทึกนี้สรุปจากการหารือเรื่องการนำ NDVI มาใช้กับงานตรวจสอบย้อนกลับวัตถุดิบ EUDR
+    และการพยากรณ์ผลผลิต ตัวเลขพื้นที่และจำนวนแปลงอ้างอิงจากฐานข้อมูลที่มีอยู่
+    ส่วนช่วงเวลาฤดูกาลเป็นค่าโดยทั่วไป ต้องปรับเทียบกับข้อมูลจริงของพื้นที่ก่อนใช้งาน</p>
+</footer>
+
+</html>

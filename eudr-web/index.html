@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบตรวจสอบย้อนกลับวัตถุดิบ EUDR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div id="boot">กำลังโหลดฐานข้อมูล…</div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">EU</div>
+    <div>
+      <h1>ระบบตรวจสอบย้อนกลับวัตถุดิบ EUDR</h1>
+      <p id="brandSub">ยางพารา · Chain of Custody &amp; Quota Control</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="season">
+      <label for="seasonSel">ปีการผลิต</label>
+      <select id="seasonSel"></select>
+    </div>
+    <button class="btn ghost" id="themeBtn" title="สลับธีม">◐</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-view="dashboard" class="active">ภาพรวม</button>
+  <button data-view="suppliers">ทะเบียนแหล่งวัตถุดิบ</button>
+  <button data-view="plots">แปลงปลูก</button>
+  <button data-view="purchase">รับซื้อ / ตัดโควต้า</button>
+  <button data-view="reports">รายงาน &amp; ส่งออก</button>
+  <button data-view="settings">ตั้งค่า</button>
+</nav>
+
+<main>
+  <!-- ============ DASHBOARD ============ -->
+  <section id="view-dashboard" class="view active">
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="panel-row">
+      <div class="panel">
+        <h2>สัดส่วนพื้นที่ตามประเภทแหล่งวัตถุดิบ</h2>
+        <div id="catChart" class="cat-chart"></div>
+      </div>
+      <div class="panel">
+        <h2>สถานะการใช้โควต้า (ปีการผลิตปัจจุบัน)</h2>
+        <div id="quotaSummary"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>10 อันดับแหล่งวัตถุดิบที่ใช้โควต้าสูงสุด</h2>
+        <span class="muted" id="topNote"></span>
+      </div>
+      <div class="table-wrap"><table class="tbl" id="topQuotaTbl"></table></div>
+    </div>
+
+    <div class="panel-row">
+      <div class="panel">
+        <h2>เอกสารสิทธิ์ที่ดิน (ไร่)</h2>
+        <div id="docChart" class="cat-chart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>พื้นที่ตามเขตปกครอง</h2>
+          <div class="chips" id="areaLevelChips">
+            <button data-lv="prov" class="active">จังหวัด</button>
+            <button data-lv="dist">อำเภอ</button>
+            <button data-lv="tam">ตำบล</button>
+          </div>
+        </div>
+        <div id="areaChart" class="cat-chart"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>แปลงที่ทับซ้อนเขตอนุรักษ์</h2>
+        <span class="muted">ตรวจจากพิกัดแปลงเทียบขอบเขตพื้นที่อนุรักษ์ — คลิกแถวเพื่อดูบนแผนที่</span>
+      </div>
+      <div id="protectPanel"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>แผนที่ดาวเทียม — แปลงปลูกทั้งหมดในระบบ</h2>
+        <div class="panel-head-actions">
+          <div class="chips" id="mapCatChips">
+            <button data-cat="" class="active">ทั้งหมด</button>
+            <button data-cat="estate">สวนรายใหญ่</button>
+            <button data-cat="promotion">ส่งเสริม</button>
+            <button data-cat="collector">ผู้รวบรวม</button>
+          </div>
+          <select id="mapProvince"><option value="">ทุกจังหวัด</option></select>
+          <select id="mapDistrict"><option value="">ทุกอำเภอ</option></select>
+          <select id="mapTambon"><option value="">ทุกตำบล</option></select>
+        </div>
+      </div>
+      <div class="mapbox tall" id="overviewMap"></div>
+      <div class="map-legend">
+        <span><i style="background:#5ef08f"></i>สวนรายใหญ่</span>
+        <span><i style="background:#ffd166"></i>ส่งเสริม</span>
+        <span><i style="background:#6fc6ff"></i>ผู้รวบรวม</span>
+        <span>คลิกที่แปลงเพื่อดูรายละเอียด · ลากเพื่อเลื่อน · สกรอลล์เพื่อซูม · ปุ่ม ☰ เลือกภาพพื้นหลังและชั้นขอบเขต จังหวัด/อำเภอ/ตำบล</span>
+      </div>
+      <p class="muted" id="mapNote"></p>
+    </div>
+  </section>
+
+  <!-- ============ SUPPLIERS ============ -->
+  <section id="view-suppliers" class="view">
+    <div class="toolbar">
+      <input type="search" id="supSearch" placeholder="ค้นหา ชื่อผู้ขาย / หมู่บ้าน / รหัส CV…">
+      <div class="chips" id="supCatChips">
+        <button data-cat="" class="active">ทั้งหมด</button>
+        <button data-cat="estate">สวนรายใหญ่</button>
+        <button data-cat="promotion">ส่งเสริม</button>
+        <button data-cat="collector">ผู้รวบรวม</button>
+      </div>
+      <select id="supSort">
+        <option value="areaRai">เรียงตามพื้นที่ (มาก→น้อย)</option>
+        <option value="usedPct">เรียงตาม % ใช้โควต้า</option>
+        <option value="remain">เรียงตามโควต้าคงเหลือ (น้อย→มาก)</option>
+        <option value="name">เรียงตามชื่อ</option>
+      </select>
+      <span class="muted" id="supCount"></span>
+    </div>
+    <div class="table-wrap"><table class="tbl" id="supTbl"></table></div>
+    <div class="pager" id="supPager"></div>
+  </section>
+
+  <!-- ============ PLOTS ============ -->
+  <section id="view-plots" class="view">
+    <div class="toolbar">
+      <input type="search" id="plotSearch" placeholder="ค้นหา รหัสแปลง / ชื่อเกษตรกร / เลขที่เอกสารสิทธิ์…">
+      <select id="plotCat">
+        <option value="">ทุกประเภทแหล่ง</option>
+        <option value="estate">สวนรายใหญ่</option>
+        <option value="promotion">ส่งเสริม</option>
+        <option value="collector">ผู้รวบรวม</option>
+      </select>
+      <select id="plotDoc">
+        <option value="">ทุกเอกสารสิทธิ์</option>
+        <option value="chanote">โฉนด</option>
+        <option value="spk">ส.ป.ก.</option>
+        <option value="nor_sor_3">น.ส.3</option>
+      </select>
+      <select id="plotProvince"><option value="">ทุกจังหวัด</option></select>
+      <select id="plotDistrict"><option value="">ทุกอำเภอ</option></select>
+      <select id="plotTambon"><option value="">ทุกตำบล</option></select>
+      <select id="plotProtect">
+        <option value="">ทุกแปลง</option>
+        <option value="any">เฉพาะที่ทับเขตอนุรักษ์</option>
+        <option value="in">เฉพาะที่อยู่ในเขต</option>
+        <option value="edge">เฉพาะที่ขอบล้ำเข้า</option>
+        <option value="none">เฉพาะที่ไม่ทับเขต</option>
+      </select>
+      <span class="muted" id="plotCount"></span>
+      <button class="btn" id="plotExport">ส่งออก GeoJSON ตามที่กรอง</button>
+    </div>
+    <div class="table-wrap"><table class="tbl" id="plotTbl"></table></div>
+    <div class="pager" id="plotPager"></div>
+  </section>
+
+  <!-- ============ PURCHASE ============ -->
+  <section id="view-purchase" class="view">
+    <div class="panel-row">
+      <div class="panel form-panel">
+        <h2>บันทึกการรับซื้อ (ตัดโควต้า)</h2>
+        <form id="buyForm" autocomplete="off">
+          <div class="fld-row">
+            <div class="fld"><label>วันที่รับซื้อ</label><input type="date" id="f_date" required></div>
+            <div class="fld"><label>เลขที่ใบชั่ง / ใบรับซื้อ</label><input type="text" id="f_doc" placeholder="เช่น WB-2569-00123"></div>
+            <div class="fld"><label>Lot No.</label><input type="text" id="f_lot" placeholder="เช่น LOT-2569-014"></div>
+          </div>
+          <div class="fld">
+            <label>แหล่งวัตถุดิบ</label>
+            <input type="text" id="f_supSearch" placeholder="พิมพ์เพื่อค้นหา ชื่อ / หมู่บ้าน / CV" list="supList">
+            <datalist id="supList"></datalist>
+            <input type="hidden" id="f_sup">
+            <div id="f_supInfo" class="sup-info"></div>
+          </div>
+
+          <div class="fld scope-block" id="scopeBlock" hidden>
+            <label>ขอบเขตแปลงต้นทางของล็อตนี้ <span class="req-tag">ข้อมูลที่ใช้ยื่น DDS</span></label>
+            <div class="scope-pick">
+              <label><input type="radio" name="scope" value="all" checked> ทั้งกลุ่ม</label>
+              <label><input type="radio" name="scope" value="sel"> เลือกเฉพาะรายที่ส่งล็อตนี้</label>
+            </div>
+            <div id="scopeList" class="scope-list" hidden>
+              <input type="search" id="scopeSearch" placeholder="ค้นหาชื่อเกษตรกร…">
+              <div class="scope-actions">
+                <button type="button" class="btn ghost" id="scopeNone">ล้างที่เลือก</button>
+                <span class="muted" id="scopeFound"></span>
+              </div>
+              <div id="scopeFarmers" class="scope-farmers"></div>
+            </div>
+            <div id="scopeSummary" class="scope-summary"></div>
+          </div>
+          <div class="fld-row">
+            <div class="fld"><label>ชนิดวัตถุดิบ</label>
+              <select id="f_product">
+                <option value="cuplump" data-drc="60">ยางก้อนถ้วย</option>
+                <option value="latex" data-drc="35">น้ำยางสด</option>
+                <option value="ussheet" data-drc="95">ยางแผ่นดิบ</option>
+                <option value="scrap" data-drc="70">เศษยาง / ขี้ยาง</option>
+                <option value="dry" data-drc="100">ยางแห้ง (DRC 100%)</option>
+              </select>
+            </div>
+            <div class="fld"><label>น้ำหนักรับซื้อ (กก.)</label><input type="number" id="f_weight" min="0" step="0.01" required></div>
+            <div class="fld"><label>%DRC</label><input type="number" id="f_drc" min="1" max="100" step="0.1" required></div>
+          </div>
+          <div class="fld-row">
+            <div class="fld"><label>น้ำหนักยางแห้ง (กก.) — ใช้ตัดโควต้า</label><input type="text" id="f_dry" readonly class="ro"></div>
+            <div class="fld"><label>ราคา/กก. (บาท)</label><input type="number" id="f_price" min="0" step="0.01"></div>
+          </div>
+          <div class="fld"><label>หมายเหตุ</label><input type="text" id="f_note" placeholder="ทะเบียนรถ / ผู้ส่งมอบ / เลข DDS"></div>
+
+          <div class="fld" id="attachBlock">
+            <label>ไฟล์แนบ — รูปใบชั่ง / เอกสารประกอบ</label>
+            <div class="attach-bar">
+              <label class="btn file-btn">แนบไฟล์รูปใบชั่ง
+                <input type="file" id="f_files" accept="image/*,application/pdf" multiple hidden>
+              </label>
+              <label class="btn file-btn" id="camBtn">ถ่ายรูป
+                <input type="file" id="f_cam" accept="image/*" capture="environment" hidden>
+              </label>
+              <span class="muted" id="attachHint">รูปจะถูกย่อขนาดอัตโนมัติก่อนบันทึก</span>
+            </div>
+            <div class="attach-list" id="attachList"></div>
+          </div>
+
+          <div id="quotaMeter" class="quota-meter"></div>
+          <div id="allocPreview"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn primary" id="buySubmit">บันทึกและตัดโควต้า</button>
+            <button type="button" class="btn ghost" id="buyReset">ล้างฟอร์ม</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>สรุปโควต้าของแหล่งที่เลือก</h2>
+        <div id="supQuotaDetail" class="empty">ยังไม่ได้เลือกแหล่งวัตถุดิบ</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>รายการรับซื้อ</h2>
+        <div class="panel-head-actions">
+          <input type="search" id="txSearch" placeholder="ค้นหารายการ…">
+          <button class="btn" id="txExport">ส่งออก CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="tbl" id="txTbl"></table></div>
+      <div class="pager" id="txPager"></div>
+    </div>
+  </section>
+
+  <!-- ============ REPORTS ============ -->
+  <section id="view-reports" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>รายงานควบคุมโควต้ารายแหล่ง</h2>
+        <div class="panel-head-actions">
+          <select id="repCat">
+            <option value="">ทุกประเภท</option>
+            <option value="estate">สวนรายใหญ่</option>
+            <option value="promotion">ส่งเสริม</option>
+            <option value="collector">ผู้รวบรวม</option>
+          </select>
+          <button class="btn" id="repExport">ส่งออก CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="tbl" id="repTbl"></table></div>
+    </div>
+
+    <div class="panel-row">
+      <div class="panel">
+        <h2>ชุดข้อมูลสำหรับยื่น Due Diligence Statement</h2>
+        <p class="muted">ส่งออกพิกัดแปลงในรูปแบบ GeoJSON (WGS84 / EPSG:4326) พร้อมรหัสแปลง ชื่อเกษตรกร เลขที่เอกสารสิทธิ์ และขนาดพื้นที่</p>
+        <div class="btn-col">
+          <button class="btn" data-geo="all">GeoJSON — ทุกแปลง (<span id="cntAll"></span>)</button>
+          <button class="btn" data-geo="estate">GeoJSON — สวนรายใหญ่</button>
+          <button class="btn" data-geo="promotion">GeoJSON — ส่งเสริม</button>
+          <button class="btn" data-geo="collector">GeoJSON — ผู้รวบรวม</button>
+          <button class="btn" data-geo="traded">GeoJSON — เฉพาะแหล่งที่มีการรับซื้อในปีนี้</button>
+          <button class="btn danger" data-geo="protect">GeoJSON — เฉพาะแปลงที่ทับเขตอนุรักษ์</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>ส่งออกฐานข้อมูล</h2>
+        <p class="muted">ไฟล์ CSV สำหรับแนบเอกสารตรวจประเมิน FSC CoC / EUDR</p>
+        <div class="btn-col">
+          <button class="btn" id="expSup">CSV — ทะเบียนแหล่งวัตถุดิบ</button>
+          <button class="btn" id="expPlot">CSV — ทะเบียนแปลงปลูก</button>
+          <button class="btn" id="expTx">CSV — รายการรับซื้อทั้งหมด</button>
+          <button class="btn" id="expAlloc">CSV — รายงานตัดโควต้าทุกรอบ (รายแปลง)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="view-settings" class="view">
+    <div class="panel-row">
+      <div class="panel">
+        <h2>เกณฑ์คำนวณโควต้า</h2>
+        <p class="muted">โควต้า = พื้นที่ (ไร่) × ผลผลิตต่อไร่ต่อปี (กก. ยางแห้ง) ปรับค่าให้ตรงกับผลผลิตจริงของพื้นที่ได้</p>
+        <div class="fld-row">
+          <div class="fld"><label>สวนรายใหญ่ (กก./ไร่/ปี)</label><input type="number" id="s_estate" min="0" step="1"></div>
+          <div class="fld"><label>ส่งเสริม (กก./ไร่/ปี)</label><input type="number" id="s_promotion" min="0" step="1"></div>
+          <div class="fld"><label>ผู้รวบรวม (กก./ไร่/ปี)</label><input type="number" id="s_collector" min="0" step="1"></div>
+        </div>
+        <div class="fld-row">
+          <div class="fld"><label>เมื่อรับซื้อเกินโควต้า</label>
+            <select id="s_mode">
+              <option value="warn">เตือน แต่บันทึกได้ (ต้องยืนยัน)</option>
+              <option value="block">ห้ามบันทึก (ปิดกั้น)</option>
+              <option value="off">ไม่ควบคุม</option>
+            </select>
+          </div>
+          <div class="fld"><label>เตือนเมื่อใช้โควต้าถึง (%)</label><input type="number" id="s_warn" min="1" max="100" step="1"></div>
+          <div class="fld"><label>หักพื้นที่เสี่ยง (ไฮไลต์เหลือง) ออกจากโควต้า</label>
+            <select id="s_flag"><option value="1">หัก</option><option value="0">ไม่หัก</option></select>
+          </div>
+        </div>
+        <button class="btn primary" id="saveSettings">บันทึกการตั้งค่า</button>
+      </div>
+
+      <div class="panel">
+        <h2>สำรอง / กู้คืนข้อมูล</h2>
+        <p class="muted">ข้อมูลการรับซื้อและการตั้งค่าถูกเก็บไว้ในเบราว์เซอร์เครื่องนี้ (localStorage) ควรสำรองไฟล์เป็นระยะ</p>
+        <div class="btn-col">
+          <button class="btn" id="backupBtn">ดาวน์โหลดไฟล์สำรอง (.json)</button>
+          <label class="btn file-btn">กู้คืนจากไฟล์สำรอง<input type="file" id="restoreInp" accept=".json" hidden></label>
+          <button class="btn danger" id="wipeBtn">ล้างรายการรับซื้อทั้งหมด</button>
+        </div>
+        <div id="storeInfo" class="muted"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>การกระจายผลผลิตรายเดือน (%)</h2>
+        <button class="btn ghost" id="seasonReset">รีเซ็ตเป็นเท่ากันทุกเดือน</button>
+      </div>
+      <p class="muted">ใช้คำนวณโควต้ารายเดือนของแต่ละแปลงสำหรับระบบตัดโควต้าอัตโนมัติ ค่าเริ่มต้นแบ่งเท่ากันทุกเดือน —
+        ปรับให้ตรงกับฤดูกาลจริงได้ (เช่น ลดสัดส่วนช่วงผลัดใบ ก.พ.–เม.ย. เพิ่มช่วงปลายปี) แต่ละแถวไม่จำเป็นต้องรวมเป็น 100%
+        พอดี ระบบจะคิดตามสัดส่วนของผลรวมที่กรอกไว้ให้เอง</p>
+      <div class="table-wrap"><table class="tbl" id="seasonTbl"></table></div>
+    </div>
+
+    <div class="panel">
+      <h2>โควต้าเฉพาะราย (override)</h2>
+      <p class="muted">กำหนดโควต้าเป็นกิโลกรัมยางแห้งต่อปีให้แหล่งใดแหล่งหนึ่งโดยตรง แทนการคำนวณจากพื้นที่ เว้นว่างเพื่อกลับไปใช้ค่าคำนวณ</p>
+      <div class="toolbar">
+        <input type="text" id="ovSearch" placeholder="ค้นหาแหล่งวัตถุดิบ…" list="supList2">
+        <datalist id="supList2"></datalist>
+      </div>
+      <div class="table-wrap"><table class="tbl" id="ovTbl"></table></div>
+    </div>
+
+    <div class="panel">
+      <h2>ที่มาของข้อมูล</h2>
+      <div id="metaInfo" class="meta-grid"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ DRAWER ============ -->
+<div class="drawer-scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div><h2 id="drawerTitle"></h2><p id="drawerSub" class="muted"></p></div>
+    <button class="btn ghost" id="drawerClose">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div id="toast" class="toast"></div>
+
+<script src="data/db.js"></script>
+<script src="data/geo.js"></script>
+<script src="data/admin.js"></script>
+<script src="data/protect.js"></script>
+<script src="data/tiles.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
