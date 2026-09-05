@@ -1125,6 +1125,11 @@ function orderTambonsByProximity(groups) {
 function orderPlotsWithinTambon(plots) {
   return plots.slice().sort((a, b) => b.areaRai - a.areaRai || a.code.localeCompare(b.code));
 }
+/* ต่ำกว่านี้ถือว่าเป็นเศษปัดเศษ (แสดงผลเป็น 0.00 กก. อยู่ดี) ไม่ใช่โควต้าที่เหลือใช้ได้จริง
+   ต้องตัดออกจากบัญชี ไม่งั้นแปลงที่โควต้าหมดแล้วจะโผล่มาเป็นแถว 0.00 กก. ในรอบถัดไป */
+const QUOTA_EPS = 0.005;
+/* ใช้กับยอดรวมทั้งปี/รายเดือนที่แสดงเป็นจำนวนเต็ม (n0) — กันเตือน "เกิน 0 กก." จากเศษปัดเศษสะสม */
+const WARN_EPS = 0.5;
 /** ตัดโควต้าอัตโนมัติ: คืนรายการ {uid, code, tambon, kg, seq, over} เรียงตามลำดับที่ตัดจริง
     over = true หมายถึงส่วนที่เกินกำลังผลิตรายเดือนของทั้งขอบเขต ถูกกระจายตามสัดส่วนพื้นที่แทน */
 function autoAllocate(scopePlots, needKg, ym) {
@@ -1132,24 +1137,25 @@ function autoAllocate(scopePlots, needKg, ym) {
   let left = needKg, seq = 0;
   const groups = orderTambonsByProximity(groupByTambon(scopePlots));
   for (const grp of groups) {
-    if (left <= 0.001) break;
+    if (left <= QUOTA_EPS) break;
     for (const p of orderPlotsWithinTambon(grp.plots)) {
-      if (left <= 0.001) break;
+      if (left <= QUOTA_EPS) break;
       const remain = Math.max(0, monthlyRemainOfPlot(p, ym));
-      if (remain <= 0.001) continue;
+      if (remain <= QUOTA_EPS) continue;   // โควต้ารายเดือนของแปลงนี้หมดแล้ว (หรือเหลือแค่เศษปัดเศษ) — ข้าม
       const take = Math.min(remain, left);
+      if (take <= QUOTA_EPS) continue;     // เศษที่เหลือให้ตัดน้อยเกินจะแสดงผลเป็น 0.00 — ข้าม ไม่ตัด
       rows.push({ uid: p.uid, code: p.code, tambon: grp.name, kg: +take.toFixed(2), seq: ++seq, over: false });
       left -= take;
     }
   }
-  if (left > 0.001) {
+  if (left > QUOTA_EPS) {
     // ทุกแปลงเต็มโควต้ารายเดือนแล้วแต่ยังตัดไม่หมด — กระจายส่วนเกินตามสัดส่วนพื้นที่ พร้อมทำเครื่องหมายไว้
     let tot = 0;
     for (const p of scopePlots) tot += p.areaRai;
     if (tot > 0) {
       for (const p of scopePlots) {
         const add = left * p.areaRai / tot;
-        if (add <= 0.001) continue;
+        if (add <= QUOTA_EPS) continue;
         const exist = rows.find(r => r.uid === p.uid);
         if (exist) { exist.kg = +(exist.kg + add).toFixed(2); exist.over = true; }
         else rows.push({ uid: p.uid, code: p.code, tambon: '(เกินกำลังผลิตรายเดือน)', kg: +add.toFixed(2), seq: ++seq, over: true });
@@ -2427,7 +2433,7 @@ function updateBuyPanel() {
     ' · ' + n0(sup.plotCount) + ' แปลง · ' + n0(sup.areaRai) + ' ไร่';
 
   meterEl.className = 'quota-meter ' +
-    (stAfter.key === 'danger' || overMonthly > 0.001 ? 'alert' : stAfter.key === 'warn' ? 'near' : '');
+    (stAfter.key === 'danger' || overMonthly > WARN_EPS ? 'alert' : stAfter.key === 'warn' ? 'near' : '');
   meterEl.innerHTML =
     qline(narrowed ? 'โควต้าเฉพาะขอบเขตที่เลือก' : 'โควต้าปี ' + be(S.season) + ' (ทั้งกลุ่ม)',
           n0(sc.quota) + ' กก.') +
@@ -2435,12 +2441,12 @@ function updateBuyPanel() {
     qline('คงเหลือก่อนบันทึก', n0(sc.remain) + ' กก.') +
     (dry ? qline('รายการนี้ตัด', n0(dry) + ' กก. → คงเหลือ ' + n0(sc.quota - after) + ' กก.') : '') +
     '<div style="margin-top:8px">' + meter(pctAfter) + '</div>' +
-    (pctAfter > 100
+    (pctAfter > 100 && (after - sc.quota) > WARN_EPS
       ? '<div style="margin-top:8px;font-weight:600">⚠ เกินโควต้าทั้งปี ' + n0(after - sc.quota) + ' กก.' +
         (narrowed ? ' — พื้นที่ที่ระบุผลิตได้ไม่ถึงปริมาณนี้' : '') + '</div>'
       : '') +
     qline('กำลังผลิตเดือน ' + ym + ' ที่เหลือ', n0(monthlyRemain) + ' กก.') +
-    (overMonthly > 0.001
+    (overMonthly > WARN_EPS
       ? '<div style="margin-top:4px;font-weight:600">⚠ เกินกำลังผลิตรายเดือน ' + n0(overMonthly) + ' กก.</div>'
       : '') +
     (narrowed ? '<div class="muted" style="margin-top:6px">ทั้งกลุ่มคงเหลือ ' + n0(r.remain) + ' กก.</div>' : '');
@@ -2614,13 +2620,13 @@ function submitPurchase(e) {
   const monthlyRemain = monthlyPoolRemain(scopePlots, ym);
   const overMonthly = Math.max(0, dry - monthlyRemain);
 
-  if (S.cfg.mode !== 'off' && (overAnnual > 0.001 || overMonthly > 0.001)) {
+  if (S.cfg.mode !== 'off' && (overAnnual > WARN_EPS || overMonthly > WARN_EPS)) {
     const where = narrowed ? 'ขอบเขตที่ระบุ (' + n0(sc.count) + ' แปลง · ' + n2(sc.rai) + ' ไร่)'
                            : 'กลุ่มนี้';
     const parts = [];
-    if (overAnnual > 0.001) parts.push('เกินโควต้าทั้งปีของ' + where + ' ' + n0(overAnnual) +
+    if (overAnnual > WARN_EPS) parts.push('เกินโควต้าทั้งปีของ' + where + ' ' + n0(overAnnual) +
       ' กก. (คงเหลือทั้งปี ' + n0(sc.remain) + ' กก.)');
-    if (overMonthly > 0.001) parts.push('เกินกำลังผลิตเดือน ' + ym + ' ของ' + where + ' ' + n0(overMonthly) +
+    if (overMonthly > WARN_EPS) parts.push('เกินกำลังผลิตเดือน ' + ym + ' ของ' + where + ' ' + n0(overMonthly) +
       ' กก. (กำลังผลิตเดือนนี้เหลือ ' + n0(monthlyRemain) + ' กก.)');
     if (S.cfg.mode === 'block') {
       return toast('บันทึกไม่ได้ — ' + parts.join(' · '), true);
